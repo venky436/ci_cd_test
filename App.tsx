@@ -5,9 +5,14 @@
  * @format
  */
 
-import React from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import React, {useEffect} from 'react';
 import type {PropsWithChildren} from 'react';
+// import CodePush from 'react-native-code-push';
+
 import {
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,6 +29,9 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import Home from './src/Screens/Home';
+import PaywallScreen from './src/Screens/PaywallScreen';
+import Purchases, {LOG_LEVEL} from 'react-native-purchases';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -55,44 +63,43 @@ function Section({children, title}: SectionProps): React.JSX.Element {
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+// let codePushOptions = {checkFrequency: CodePush.CheckFrequency.ON_APP_START};
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+function App(): React.JSX.Element {
+  const loadOfferings = async () => {
+    try {
+      const offerings = await Purchases.getOfferings();
+      if (offerings.current) {
+        // setPackages(offerings.current.availablePackages);
+        console.log(offerings.current.availablePackages);
+      }
+    } catch (e) {
+      console.log({e});
+    }
   };
+  const init = async () => {
+    if (Platform.OS === 'android') {
+      await Purchases.configure({apiKey: 'goog_mJHnXUMftoahzoYoVfdXDyShhPi'});
+    } else {
+      //   await Purchases.configure({apiKey:'appl_CgCkVEUYAfpybWfqFcjgGXdAsRo'});
+    }
+    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    // Load all offerings and the user object with entitlements
+    // await loadOfferings();
+  };
+  useEffect(() => {
+    init();
+  }, []);
+
+  const Stack = createNativeStackNavigator();
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="PaywallScreen" component={PaywallScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -115,4 +122,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default App
